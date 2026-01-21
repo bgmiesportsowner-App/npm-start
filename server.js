@@ -7,12 +7,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Render port detection
+const PORT = process.env.PORT || 5003;
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS
-  }
+  },
+  // Timeout fix for Render
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 30000
 });
 
 const otpStore = new Map();
@@ -26,19 +33,35 @@ app.post('/auth/send-otp', async (req, res) => {
   console.log(`📧 Real OTP ${otp} → ${email}`);
   otpStore.set(email, otp);
   
+  // Test email - same as yours
+  const testEmail = 'akash63992006@gmail.com';
+  
   try {
     await transporter.sendMail({
       from: `"BGMI Esports" <${process.env.GMAIL_USER}>`,
-      to: email,
+      to: testEmail, // Test with your email first
       subject: '🎮 BGMI - Your OTP',
-      html: `<h1 style="color:#00d4aa;font-size:48px">${otp}</h1>`
+      html: `
+        <div style="font-family: Arial; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #00d4aa;">BGMI Esports Platform</h2>
+          <div style="background: linear-gradient(45deg, #00d4aa, #00b894); 
+                      color: white; padding: 30px; font-size: 48px; 
+                      text-align: center; border-radius: 15px; letter-spacing: 5px;">
+            ${otp}
+          </div>
+          <p style="font-size: 16px; margin: 20px 0; color: #666;">
+            Your OTP for BGMI Tournament Registration<br>
+            Valid for 5 minutes only
+          </p>
+        </div>
+      `
     });
     
-    console.log(`✅ REAL OTP SENT: ${otp}`);
+    console.log(`✅ REAL OTP SENT to ${testEmail}: ${otp}`);
     res.json({ success: true, message: 'OTP sent to your email!' });
   } catch (error) {
     console.error('❌ EMAIL ERROR:', error.message);
-    res.status(500).json({ success: false, error: 'Failed to send OTP' });
+    res.status(500).json({ success: false, error: 'Email service temporarily unavailable' });
   }
 });
 
@@ -64,7 +87,8 @@ app.post('/auth/login', (req, res) => {
   res.json({ success: true, user: { id: '1', name: 'Player' }, token: 'login-token' });
 });
 
-const PORT = process.env.PORT || 5003;
+// Render port fix
 app.listen(PORT, () => {
   console.log(`✅ BGMI Real OTP: http://localhost:${PORT}`);
+  console.log(`🌐 Render URL: https://npm-start-7vdr.onrender.com`);
 });
