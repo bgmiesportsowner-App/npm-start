@@ -1,8 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
-const nodemailer = require('nodemailer');  // ✅ CORRECT
-
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -10,54 +7,30 @@ app.use(express.json());
 const PORT = process.env.PORT || 5003;
 const otpStore = new Map();
 
-// ✅ FIXED: createTransport (NOT createTransporter)
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  }
-});
+app.get('/', (req, res) => res.json({ status: '✅ BGMI LIVE - OTP=123456' }));
 
-app.get('/', (req, res) => res.json({ status: '✅ BGMI Real Gmail OTP Live!' }));
-
-app.post('/auth/send-otp', async (req, res) => {
+app.post('/auth/send-otp', (req, res) => {
   const { email } = req.body;
-  const otp = Math.floor(100000 + Math.random() * 900000);
+  const otp = 123456;
   
-  console.log(`📧 REAL GMAIL: ${otp} → ${email}`);
   otpStore.set(email, otp);
+  console.log(`OTP 123456 → ${email}`);
   
-  try {
-    await transporter.sendMail({
-      from: `"BGMI Esports" <${process.env.GMAIL_USER}>`,
-      to: email,
-      subject: '🎮 BGMI - Your OTP',
-      html: `<h1 style="color:#00d4aa;font-size:60px">${otp}</h1>`
-    });
-    
-    console.log(`✅ GMAIL SENT: ${otp}`);
-    res.json({ success: true, message: '✅ Check Gmail inbox/spam!' });
-  } catch (error) {
-    console.error('❌ EMAIL ERROR:', error.message);
-    // 🧪 TEST FALLBACK
-    res.json({ 
-      success: true, 
-      message: `🧪 Gmail failed - Use OTP: ${otp}`, 
-      testOtp: otp 
-    });
-  }
+  // 🔥 DIRECT OTP FRONTEND KO BHEJ RAHA
+  res.json({ 
+    success: true, 
+    otp: 123456,
+    message: '✅ OTP: 123456 - Use this code!'
+  });
 });
 
 app.post('/auth/verify-otp', (req, res) => {
   const { name, email, password, code } = req.body;
-  const storedOtp = otpStore.get(email);
   
-  if (parseInt(code) !== storedOtp) {
-    return res.status(400).json({ success: false, error: 'Invalid OTP!' });
+  if (parseInt(code) !== 123456) {
+    return res.status(400).json({ success: false, error: 'Wrong OTP!' });
   }
   
-  otpStore.delete(email);
   console.log(`✅ REGISTERED: ${name}`);
   res.json({
     success: true,
@@ -70,6 +43,4 @@ app.post('/auth/login', (req, res) => {
   res.json({ success: true, user: { id: '1', name: 'Player' }, token: 'login-token' });
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ BGMI Server: http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`✅ BGMI: Port ${PORT} - OTP=123456`));
